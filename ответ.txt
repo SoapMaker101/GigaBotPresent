@@ -1,0 +1,17 @@
+Кратко, что сделано по плану:
+1. Верификация
+В ProjectTool 1 в _SUBFOLDERS уже есть «Документация» (вместе с Договоры, Сметы, Фото, Переписка). Сценарий 06 и DEMO-PRESET опираются на текущую реализацию.
+2. Конфиг
+В config/schema.py в AgentConfig добавлено поле presentation_mode: bool = False. Значение можно задать через env: GIGABOT_AGENT__PRESENTATION_MODE=true.
+3. AgentLoop 2
+В __init__ добавлен аргумент presentation_mode: bool = False, сохраняется в self.presentation_mode.
+В ContextBuilder передаётся: ContextBuilder(workspace, presentation_mode=self.presentation_mode).
+В \register_default_tools: при presentation_mode=True не регистрируются ExecTool, WebTool, SpawnTool, OCRTool, KandinskyTool и SaluteSpeechTool; всегда регистрируются FileTool, ProjectTool, MessageTool, CronTool (если есть сервис), RAGTool, TasksTool, SummaryTool.
+4. ContextBuilder 3
+В __init__ добавлен параметр presentation_mode: bool = False.
+В \get_identity при presentation_mode=True выводится укороченный блок «Доступные инструменты» (только file, project, message, cron, knowledge, tasks, summary) и подпись про демо-режим; убраны правила 4 (generate_image), 5 (web), 7 (exec); для knowledge добавлено упоминание index_folder.
+5. CLI 4
+Во все три вызова AgentLoop добавлен аргумент presentation_mode=config.agent.presentation_mode (gateway, команда agent, и ещё один вызов в commands).
+6. Документация
+В DEMO-PRESET.md добавлена секция «Режим презентации»: как включить через GIGABOT_AGENT__PRESENTATION_MODE=true или через agent.presentationMode в config.
+Полный прогон сценария 06 (с реальным GigaChat и Telegram) нужно выполнять у себя после настройки окружения; код к этому готов. Lint по изменённым файлам не ругается.

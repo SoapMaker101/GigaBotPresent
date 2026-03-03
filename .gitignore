@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+.env
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Локальные данные (не коммитить)
+gigabot/rag_db/
+# Конфиг и workspace с секретами — хранить локально
+.gigabot/
+
+# Документация для презентации (опционально)
+docs/presentation-pack/
