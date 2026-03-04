@@ -12,10 +12,17 @@
 
 ## Шаг 1. Системные зависимости
 
+На Ubuntu 22.04 пакеты Python 3.11 часто отсутствуют в стандартных репозиториях. Добавьте PPA [deadsnakes](https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa) и установите зависимости:
+
 ```bash
+sudo apt update
+sudo apt install -y software-properties-common
+sudo add-apt-repository -y ppa:deadsnakes/ppa
 sudo apt update
 sudo apt install -y python3.11 python3.11-venv python3.11-dev libffi-dev tesseract-ocr tesseract-ocr-rus git
 ```
+
+> **Примечание:** На Ubuntu 24.04 и новее Python 3.12 может быть в стандартных репозиториях; при желании использовать его замените `3.11` на `3.12` в командах (и проверьте совместимость проекта).
 
 `libffi-dev` и `python3.11-dev` нужны для зависимостей чтения PDF (cffi → pdfplumber). Для **режима презентации** (без OCR) tesseract можно не использовать, но оставить его безопасно.
 
@@ -33,7 +40,7 @@ sudo su - gigabot
 Если проект уже в репозитории:
 
 ```bash
-git clone <URL_ВАШЕГО_РЕПОЗИТОРИЯ> ~/GigaBotPresent
+git clone https://github.com/SoapMaker101/GigaBotPresent ~/GigaBotPresent
 cd ~/GigaBotPresent/gigabot
 ```
 
@@ -56,9 +63,27 @@ pip install hatchling
 pip install -e .
 ```
 
-## Шаг 4. Конфигурация
+### Виртуальное окружение и как в него попадать
+
+- **Виртуальное окружение (venv)** — это папка `.venv` внутри каталога проекта: `~/GigaBotPresent/gigabot/.venv`. В ней установлены Python и команда `gigabot`; без активации окружения команда `gigabot` в системе не найдена.
+- **Конфиг** лежит в **домашнем каталоге пользователя**, под которым вы работаете: `~/.gigabot/config.json`. Например, для пользователя `giga` это `/home/giga/.gigabot/config.json`; для `gigabot` — `/home/gigabot/.gigabot/config.json`. Редактировать конфиг можно в любой момент (даже без активированного venv): `nano ~/.gigabot/config.json`.
+
+**После нового подключения к серверу** нужно снова войти в каталог проекта и активировать окружение — тогда заработает команда `gigabot`:
 
 ```bash
+cd ~/GigaBotPresent/gigabot
+source .venv/bin/activate
+```
+
+В приглашении появится `(.venv)` — значит окружение активно. Дальше можно вызывать `gigabot onboard`, `gigabot agent`, и т.д.
+
+## Шаг 4. Конфигурация
+
+Перейдите в каталог проекта и активируйте venv (см. выше), затем создайте конфиг и отредактируйте его:
+
+```bash
+cd ~/GigaBotPresent/gigabot
+source .venv/bin/activate
 gigabot onboard
 nano ~/.gigabot/config.json
 ```
@@ -81,6 +106,8 @@ nano ~/.gigabot/config.json
 
 ## Шаг 5. Проверка
 
+Сначала активируйте виртуальное окружение (из любого каталога можно так, либо `cd ~/GigaBotPresent/gigabot` и `source .venv/bin/activate`):
+
 ```bash
 source ~/GigaBotPresent/gigabot/.venv/bin/activate
 gigabot agent -m "Привет! Кто ты?"
@@ -90,30 +117,63 @@ gigabot agent -m "Привет! Кто ты?"
 
 ## Шаг 6. Systemd-сервис (постоянный запуск)
 
-Подставьте реальные пути (пользователь и каталог). Пример для пользователя `gigabot` и каталога `~/GigaBotPresent/gigabot`:
+Выполнять **от пользователя с sudo** (например `giga`), не от `gigabot`.
+
+В репозитории лежит готовый файл юнита `docs/gigabot.service`. Скопируйте его в systemd и включите сервис — **четыре команды по одной строке**:
 
 ```bash
-sudo tee /etc/systemd/system/gigabot.service > /dev/null << 'EOF'
-[Unit]
-Description=GigaBot Present (CSM demo)
-After=network.target
-
-[Service]
-Type=simple
-User=gigabot
-WorkingDirectory=/home/gigabot/GigaBotPresent/gigabot
-ExecStart=/home/gigabot/GigaBotPresent/gigabot/.venv/bin/gigabot gateway
-Restart=always
-RestartSec=5
-Environment=HOME=/home/gigabot
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
+sudo cp ~/GigaBotPresent/docs/gigabot.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable gigabot
 sudo systemctl start gigabot
+```
+
+**Если выдаёт «No such file or directory»:**
+
+1. Проект может лежать в домашней папке пользователя `gigabot`. Тогда (под пользователем `giga`):
+   ```bash
+   sudo cp /home/gigabot/GigaBotPresent/docs/gigabot.service /etc/systemd/system/
+   ```
+2. Либо на сервере старая копия репозитория без этого файла. Обновите код и снова скопируйте:
+   ```bash
+   cd ~/GigaBotPresent && git pull
+   sudo cp ~/GigaBotPresent/docs/gigabot.service /etc/systemd/system/
+   ```
+3. Либо создайте файл вручную. Команда:
+   ```bash
+   sudo nano /etc/systemd/system/gigabot.service
+   ```
+   Вставьте содержимое ниже (замените `gigabot` на `giga` в путях и в `User`/`Environment`, если проект под пользователем `giga`), сохраните (Ctrl+O, Enter, Ctrl+X):
+
+   ```
+   [Unit]
+   Description=GigaBot Present (CSM demo)
+   After=network.target
+
+   [Service]
+   Type=simple
+   User=gigabot
+   WorkingDirectory=/home/gigabot/GigaBotPresent/gigabot
+   ExecStart=/home/gigabot/GigaBotPresent/gigabot/.venv/bin/gigabot gateway
+   Restart=always
+   RestartSec=5
+   Environment=HOME=/home/gigabot
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+После того как файл юнита появился в `/etc/systemd/system/gigabot.service`, выполните:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable gigabot
+sudo systemctl start gigabot
+```
+
+Если проект развёрнут под пользователем **giga** (а не `gigabot`), отредактируйте файл и замените все `gigabot` на `giga` в путях и в `User`/`Environment`:
+
+```bash
+sudo nano /etc/systemd/system/gigabot.service
 ```
 
 Проверка:
@@ -137,3 +197,4 @@ sudo systemctl restart gigabot
 
 - **Логи:** `sudo journalctl -u gigabot -n 100 --no-pager` или `sudo journalctl -u gigabot -f`.
 - **Откат:** откатить код (git checkout / восстановить копию), снова `pip install -e .`, `sudo systemctl restart gigabot`.
+

@@ -1,0 +1,15 @@
+[Unit]
+Description=GigaBot Present (CSM demo)
+After=network.target
+
+[Service]
+Type=simple
+User=gigabot
+WorkingDirectory=/home/gigabot/GigaBotPresent/gigabot
+ExecStart=/home/gigabot/GigaBotPresent/gigabot/.venv/bin/gigabot gateway
+Restart=always
+RestartSec=5
+Environment=HOME=/home/gigabot
+
+[Install]
+WantedBy=multi-user.target
