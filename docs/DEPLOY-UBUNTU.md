@@ -203,7 +203,16 @@ sudo systemctl restart gigabot
 
 ## Логи и откат
 
-- **Логи:** `sudo journalctl -u gigabot -n 100 --no-pager` или `sudo journalctl -u gigabot -f`.
+**Просмотр логов сервиса:**
+
+```bash
+# Последние 100 строк (одним выводом)
+sudo journalctl -u gigabot -n 100 --no-pager
+
+# Поток логов в реальном времени (выход — Ctrl+C)
+sudo journalctl -u gigabot -f
+```
+
 - **Откат:** откатить код (git checkout / восстановить копию), снова `pip install -e .` в каталоге `~/GigaBotPresent/gigabot` с активированным venv, затем `sudo systemctl restart gigabot`.
 
 ---
